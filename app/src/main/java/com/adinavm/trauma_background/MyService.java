@@ -13,6 +13,10 @@ import android.util.Log;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+
 import static android.content.ContentValues.TAG;
 
 public class MyService extends Service implements SensorEventListener {
@@ -49,6 +53,7 @@ public class MyService extends Service implements SensorEventListener {
     @Override
     public void onSensorChanged(SensorEvent event) {
 
+        String file_name = "hello_file";
         if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
 
             Log.d(TAG, "Inside onSensorChanged");
@@ -79,6 +84,22 @@ public class MyService extends Service implements SensorEventListener {
                     last_y = y;
                     last_z = z;
                     last_mag_acceleration = acceleration;
+                    String x_acc = String.valueOf(last_x);
+                    String y_acc = String.valueOf(last_y);
+                    String z_acc = String.valueOf(last_z);
+
+                    try {
+                        FileOutputStream fileOutputStream = openFileOutput(file_name,MODE_PRIVATE);
+                        fileOutputStream.write(x_acc.getBytes());
+                        fileOutputStream.write(y_acc.getBytes());
+                        fileOutputStream.write(z_acc.getBytes());
+                        fileOutputStream.close();
+                        Toast.makeText(getApplicationContext(), "Data Saved", Toast.LENGTH_LONG).show();
+                    } catch (FileNotFoundException e) {
+                        e.printStackTrace();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
 
                 }
             }
