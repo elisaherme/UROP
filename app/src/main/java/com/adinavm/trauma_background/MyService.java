@@ -10,14 +10,15 @@ import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.IBinder;
+import android.os.Message;
+import android.os.Messenger;
+import android.os.RemoteException;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.telephony.SmsManager;
-import android.test.mock.MockPackageManager;
 import android.util.Log;
-import android.view.View;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import java.io.FileNotFoundException;
@@ -28,53 +29,13 @@ import static android.content.ContentValues.TAG;
 
 public class MyService extends Service implements SensorEventListener {
 
-    private static final int MY_PERMISSIONS_REQUEST_SEND_SMS =0 ;
+
     private SensorManager senSensorManager;
     private Sensor senAccelerometer;
 
-    private static final int REQUEST_CODE_PERMISSION = 2;
-    String mPermission = Manifest.permission.ACCESS_FINE_LOCATION;
-
-    public double latitude;
-    public double longitude;
-
-    GPSTracker gps;
-
     @Override
-    public void onCreate(Bundle savedInstanceState) {
-        try {
-            if (ActivityCompat.checkSelfPermission(this, mPermission)
-                    != MockPackageManager.PERMISSION_GRANTED) {
+    public void onCreate() {
 
-                ActivityCompat.requestPermissions(this, new String[]{mPermission},
-                        REQUEST_CODE_PERMISSION);
-
-                // If any permission above not allowed by user, this condition will
-                // execute every time, else your else part will work
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        gps = new GPSTracker(MyService.this);
-
-        // check if GPS enabled
-        if(gps.canGetLocation()){
-
-            latitude = gps.getLatitude();
-            longitude = gps.getLongitude();
-
-            Toast.makeText(getApplicationContext(), "Your Location is - \nLat: "
-                    + latitude + "\nLong: " + longitude, Toast.LENGTH_LONG).show();
-        }else{
-            // can't get location
-            // GPS or Network is not enabled
-            // Ask user to enable GPS/network in settings
-            gps.showSettingsAlert();
-        }
-    }
-
-    @Override
-    public void onCreate(){
 
         senSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
         senAccelerometer = senSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
@@ -102,12 +63,13 @@ public class MyService extends Service implements SensorEventListener {
     private float last_x, last_y, last_z, last_mag_acceleration;
     // sets the threshold of how sensitive you want the app to be to movement
     private static final int SHAKE_THRESHOLD = 600;
+    Messenger replyMessanger;
+    final static int MESSAGE = 1;
 
     @Override
     public void onSensorChanged(SensorEvent event) {
 
         String file_name = "hello_file";
-        SmsManager sms = SmsManager.getDefault();
         if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
 
             Log.d(TAG, "Inside onSensorChanged");
@@ -165,46 +127,13 @@ public class MyService extends Service implements SensorEventListener {
                     }
                     duration = time*10;
                     max_accl = String.valueOf(max_acc);
-                    sendSMSMessage();
+
+                    sendDataToActivity(duration, max_acc);
                 }
             }
         }
     }
 
-    protected void sendSMSMessage() {
-
-        if (ContextCompat.checkSelfPermission(this,
-                Manifest.permission.SEND_SMS)
-                != PackageManager.PERMISSION_GRANTED) {
-            if (ActivityCompat.shouldShowRequestPermissionRationale(this,
-                    Manifest.permission.SEND_SMS)) {
-            } else {
-                ActivityCompat.requestPermissions(this,
-                        new String[]{Manifest.permission.SEND_SMS},
-                        MY_PERMISSIONS_REQUEST_SEND_SMS);
-            }
-        }
-    }
-
-    public void onRequestPermissionsResult(int requestCode,String permissions[], int[] grantResults) {
-        switch (requestCode) {
-            case MY_PERMISSIONS_REQUEST_SEND_SMS: {
-                if (grantResults.length > 0
-                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    SmsManager smsManager = SmsManager.getDefault();
-                    smsManager.sendTextMessage("phoneNo", null, "I had an accident. The maximum acceleration was " + max_accl + ". My last known location is - \nLat: "
-                            + latitude + "\nLong: " + longitude, null, null);
-                    Toast.makeText(getApplicationContext(), "SMS sent.",
-                            Toast.LENGTH_LONG).show();
-                } else {
-                    Toast.makeText(getApplicationContext(),
-                            "SMS faild, please try again.", Toast.LENGTH_LONG).show();
-                    return;
-                }
-            }
-        }
-
-    }
 
     @Override
     public void onAccuracyChanged(Sensor sensor, int accuracy) {
@@ -217,10 +146,38 @@ public class MyService extends Service implements SensorEventListener {
         super.onDestroy();
     }
 
+
+
+    class IncomingHandler extends Handler {
+
+        @Override
+        public void handleMessage(Message msg) {
+
+            if (msg.what == MESSAGE) {
+                Bundle bundle = msg.getData();
+                //toast(bundle.getString("rec"));//message received
+                replyMessanger = msg.replyTo; //init reply messenger
+            }
+        }
+    }
+
+    private void sendDataToActivity(int duration, float max_acc) {
+
+        if (replyMessanger != null)
+            try {
+                Message message = new Message();
+                message.obj = "Duration is " + duration + "ms and the max acceleration felt is " + max_acc + "m/s^2";
+                replyMessanger.send(message);//replying / sending msg to activity
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
+    }
+    Messenger messenger = new Messenger(new IncomingHandler());
+
     @Override
     public IBinder onBind(Intent intent) {
-        // TODO: Return the communication channel to the service.
-        // throw new UnsupportedOperationException("Not yet implemented");#
-        return null;
+        return messenger.getBinder();
     }
+
+
 }
