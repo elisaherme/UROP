@@ -18,8 +18,8 @@ import android.widget.Toast;
 
 public class MainActivity extends AppCompatActivity {
 
-    private static final int MY_PERMISSIONS_REQUEST_SEND_SMS = 0;
-    private static final int REQUEST_CODE_PERMISSION = 2;
+  //  private static final int MY_PERMISSIONS_REQUEST_SEND_SMS = 0;
+  //  private static final int REQUEST_CODE_PERMISSION = 2;
     String mPermission = Manifest.permission.ACCESS_FINE_LOCATION;
 
     public double latitude;
