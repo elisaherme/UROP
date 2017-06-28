@@ -179,5 +179,4 @@ public class MyService extends Service implements SensorEventListener {
         return messenger.getBinder();
     }
 
-
 }

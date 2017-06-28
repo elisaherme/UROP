@@ -18,8 +18,8 @@ import android.widget.Toast;
 
 public class MainActivity extends AppCompatActivity {
 
-  //  private static final int MY_PERMISSIONS_REQUEST_SEND_SMS = 0;
-  //  private static final int REQUEST_CODE_PERMISSION = 2;
+    //  private static final int MY_PERMISSIONS_REQUEST_SEND_SMS = 0;
+    //  private static final int REQUEST_CODE_PERMISSION = 2;
     String mPermission = Manifest.permission.ACCESS_FINE_LOCATION;
 
     public double latitude;
@@ -100,18 +100,17 @@ public class MainActivity extends AppCompatActivity {
     Messenger replyMessenger = new Messenger(new HandlerReplyMsg());
 }
 
-    class HandlerReplyMsg extends Handler {
-        @Override
-        public void handleMessage(Message msg) {
-            super.handleMessage(msg);
-            String recdMessage = msg.obj.toString(); //msg received from service
-            //toast(recdMessage);
+class HandlerReplyMsg extends Handler {
+    @Override
+    public void handleMessage(Message msg) {
+        super.handleMessage(msg);
+        String recdMessage = msg.obj.toString(); //msg received from service
+        //toast(recdMessage);
 
-            //message received from service with max acceleration and duration, hopefully will send this info in text
-            SmsManager smsManager = SmsManager.getDefault();
-            smsManager.sendTextMessage("+447400534303", null, recdMessage, null, null);
-            //then need to send a text with gps location
+        //message received from service with max acceleration and duration, hopefully will send this info in text
+        SmsManager smsManager = SmsManager.getDefault();
+        smsManager.sendTextMessage("+447400534303", null, recdMessage, null, null);
+        //then need to send a text with gps location
     }
-
 
 }
